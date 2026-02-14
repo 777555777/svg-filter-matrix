@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main>
+      <div class="row">
+        <section class="container input">
+          <h3>Input</h3>
+          <div class="import">
+            <label for="fileInput" d-ref="dropzone">
+              <input type="file" d-ref="import" id="fileInput" accept="image/*" />
+            </label>
+            <div class="image">
+              <img d-ref="input-img" src="" alt="input image" />
+              <div class="placeholder">Drag & Drop or Click to Upload</div>
+            </div>
+          </div>
+          <div class="modifier">
+            <button d-ref="delete">Delete</button>
+            <button d-ref="reset">Reset</button>
+            <button d-ref="greyscale">Greyscale</button>
+            <button d-ref="invert">Invert</button>
+          </div>
+        </section>
+
+        <section class="container operator">
+          <h3>Operator</h3>
+          <div class="preset">
+            <select name="preset" d-ref="preset" id="preset">
+              <option value="blurGaussian" selected>Gaussian Blur</option>
+              <option value="blurBox">Box Blur</option>
+              <option value="edgeSobelX">Sobel X</option>
+              <option value="edgeSobelY">Sobel Y</option>
+              <option value="edgeLaplace">Laplace</option>
+              <option value="sharpen">Sharpen</option>
+              <option value="emboss">Emboss</option>
+            </select>
+          </div>
+          <div class="matrix" d-ref="matrix">
+            <input type="number" id="" />
+            <input type="number" id="" />
+            <input type="number" id="" />
+
+            <input type="number" id="" />
+            <input type="number" id="" />
+            <input type="number" id="" />
+
+            <input type="number" id="" />
+            <input type="number" id="" />
+            <input type="number" id="" />
+          </div>
+        </section>
+
+        <section class="container output">
+          <h3>Output</h3>
+          <div class="export">
+            <div class="options">
+              <button d-ref="download">Download</button>
+              <input type="text" d-ref="filename" id="" class="filename" />
+            </div>
+            <div class="image">
+              <img d-ref="output-img" src="" alt="output image" />
+              <div class="placeholder"></div>
+            </div>
+          </div>
+          <div class="result"></div>
+        </section>
+      </div>
+    </main>
+
+    <script src="script.js" defer></script>
+
+    <svg>
+      <filter id="convolve">
+        <feConvolveMatrix
+          order="3"
+          kernelMatrix="
+              1 2 1
+              2 4 2
+              1 2 1
+            "
+          divisor="16"
+        />
+
+        <!-- <feConvolveMatrix
+          d-ref="edge-detect"
+          order="3"
+          kernelMatrix="
+              -1 -1 -1
+              -1 8 -1
+              -1 -1 -1
+            "
+          divisor="1"   
+        /> -->
+      </filter>
+    </svg>
+  </body>
+</html>
