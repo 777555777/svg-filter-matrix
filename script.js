@@ -288,11 +288,16 @@ function applyCurrentFilter() {
     timestamp: Date.now(),
   });
 
-  // Keep the current preset selected (don't reset to identity)
-  // Just create a fresh copy of the current matrix
-  const currentPreset = ElementRefs.preset.value;
-  if (currentPreset !== 'custom') {
-    applyPreset(currentPreset);
+  // If we just reached the limit, switch to identity
+  if (filterHistory.length >= MAX_FILTERS) {
+    applyPreset('identity');
+  } else {
+    // Keep the current preset selected (don't reset to identity)
+    // Just create a fresh copy of the current matrix
+    const currentPreset = ElementRefs.preset.value;
+    if (currentPreset !== 'custom') {
+      applyPreset(currentPreset);
+    }
   }
 
   // Update the filter chain
@@ -308,6 +313,7 @@ function undoLastFilter() {
   filterHistory.pop();
   updateFilterChain();
   updateHistoryList();
+  updateControlsState();
 }
 
 function resetAllFilters() {
@@ -315,17 +321,31 @@ function resetAllFilters() {
   applyPreset('identity');
   updateFilterChain();
   updateHistoryList();
+  updateControlsState();
 }
 
 function updateFilterUI() {
   ElementRefs.filterCount.textContent = filterHistory.length;
+  const limitReached = filterHistory.length >= MAX_FILTERS;
+
+  // Undo always depends on history
   ElementRefs.undo.disabled = filterHistory.length === 0;
-  ElementRefs.apply.disabled = filterHistory.length >= MAX_FILTERS;
+
+  // Apply button disabled when limit reached
+  ElementRefs.apply.disabled = limitReached;
 
   // Re-check if image is loaded
   const hasImage = ElementRefs.inputImg.getAttribute('src') !== '';
   if (!hasImage) {
     ElementRefs.apply.disabled = true;
+  }
+
+  // Disable preset and matrix inputs when limit reached
+  if (limitReached) {
+    ElementRefs.preset.disabled = true;
+    ElementRefs.matrix.forEach((input) => {
+      input.disabled = true;
+    });
   }
 }
 
@@ -355,6 +375,7 @@ function removeFilter(index) {
   filterHistory.splice(index, 1);
   updateFilterChain();
   updateHistoryList();
+  updateControlsState();
 }
 
 // Make removeFilter globally accessible for onclick
@@ -387,17 +408,18 @@ function clearImage() {
  */
 function updateControlsState() {
   const hasImage = ElementRefs.inputImg.getAttribute('src') !== '';
+  const limitReached = filterHistory.length >= MAX_FILTERS;
 
-  // Disable/enable preset select
-  ElementRefs.preset.disabled = !hasImage;
+  // Disable/enable preset select (also disable when limit reached)
+  ElementRefs.preset.disabled = !hasImage || limitReached;
 
-  // Disable/enable matrix inputs
+  // Disable/enable matrix inputs (also disable when limit reached)
   ElementRefs.matrix.forEach((input) => {
-    input.disabled = !hasImage;
+    input.disabled = !hasImage || limitReached;
   });
 
   // Disable/enable action buttons
-  ElementRefs.apply.disabled = !hasImage || filterHistory.length >= MAX_FILTERS;
+  ElementRefs.apply.disabled = !hasImage || limitReached;
   ElementRefs.delete.disabled = !hasImage;
   ElementRefs.reset.disabled = !hasImage;
 
