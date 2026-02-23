@@ -3,8 +3,16 @@ import { resetAllFilters } from './filter.ts';
 import { setOriginalImageUrl, MAX_IMAGE_DIM } from './state.ts';
 import { trackObjectUrl, revokeTrackedObjectUrl } from './object-url.ts';
 
+const MAX_FILE_SIZE_BYTES = 75 * 1024 * 1024;
+
 function loadImageFile(file: File): void {
-  if (!file.type.startsWith('image/')) {
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    alert('Please select an image up to 75 MB');
+    return;
+  }
+
+  // Keep support broad (image/*), including GIF/WebP/etc.
+  if (file.type && !file.type.startsWith('image/')) {
     alert('Please select a valid image file');
     return;
   }
@@ -37,6 +45,10 @@ function loadImageFile(file: File): void {
       'image/jpeg',
       0.95
     );
+  };
+  img.onerror = () => {
+    revokeTrackedObjectUrl(objectUrl);
+    alert('Could not load this image file');
   };
   img.src = objectUrl;
 }
