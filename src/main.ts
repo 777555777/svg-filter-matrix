@@ -5,7 +5,8 @@ import { updatePresetSelection } from './ui.ts';
 import { handleFileChange, handleDropzoneClick, handleFileDrop, handleDragOver, clearImage } from './file-import.ts';
 
 function init(): void {
-  // Matrix input events
+  // Matrix input events (rAF-debounced to avoid redundant filter rebuilds)
+  let rafPending = false;
   dom.matrixInputs.forEach((input) => {
     input.addEventListener('input', (e) => {
       const target = e.target as HTMLInputElement;
@@ -13,8 +14,14 @@ function init(): void {
       const row = Math.floor(index / 3);
       const col = index % 3;
       filterMatrixState[row][col] = parseFloat(target.value) || 0;
-      setMatrix(filterMatrixState);
       updatePresetSelection();
+      if (!rafPending) {
+        rafPending = true;
+        requestAnimationFrame(() => {
+          rafPending = false;
+          setMatrix(filterMatrixState);
+        });
+      }
     });
   });
 

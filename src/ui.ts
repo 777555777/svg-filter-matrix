@@ -1,5 +1,5 @@
 import { dom } from './dom.ts';
-import { filterHistory, filterMatrixState, MAX_FILTERS } from './state.ts';
+import { filterHistory, filterMatrixState, MAX_FILTERS, originalImageUrl } from './state.ts';
 import { PRESETS } from './presets.ts';
 import type { Matrix } from './types.ts';
 
@@ -50,7 +50,7 @@ export function updateFilterUI(): void {
   dom.undoBtn.disabled = filterHistory.length === 0;
   dom.applyBtn.disabled = limitReached;
 
-  const hasImage = dom.inputImg.getAttribute('src') !== '';
+  const hasImage = originalImageUrl !== '';
   if (!hasImage) {
     dom.applyBtn.disabled = true;
   }
@@ -88,7 +88,7 @@ function getPresetLabel(presetName: string): string {
 
 /** Enable / disable controls depending on image-loaded + filter-limit state */
 export function updateControlsState(): void {
-  const hasImage = dom.inputImg.getAttribute('src') !== '';
+  const hasImage = originalImageUrl !== '';
   const limitReached = filterHistory.length >= MAX_FILTERS;
 
   dom.preset.disabled = !hasImage || limitReached;

@@ -1,6 +1,6 @@
 import { dom } from './dom.ts';
 import { resetAllFilters } from './filter.ts';
-import { updateControlsState } from './ui.ts';
+import { setOriginalImageUrl, MAX_IMAGE_DIM } from './state.ts';
 
 function loadImageFile(file: File): void {
   if (!file.type.startsWith('image/')) {
@@ -8,15 +8,36 @@ function loadImageFile(file: File): void {
     return;
   }
 
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const result = e.target?.result;
-    if (typeof result === 'string') {
-      dom.inputImg.setAttribute('src', result);
-      updateControlsState();
+  const objectUrl = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    const { naturalWidth: w, naturalHeight: h } = img;
+
+    if (w <= MAX_IMAGE_DIM && h <= MAX_IMAGE_DIM) {
+      setOriginalImageUrl(objectUrl);
+      resetAllFilters();
+      return;
     }
+
+    // Down-scale to fit within 4K
+    URL.revokeObjectURL(objectUrl);
+    const scale = MAX_IMAGE_DIM / Math.max(w, h);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(w * scale);
+    canvas.height = Math.round(h * scale);
+    const ctx = canvas.getContext('2d')!;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) return;
+        setOriginalImageUrl(URL.createObjectURL(blob));
+        resetAllFilters();
+      },
+      'image/jpeg',
+      0.95
+    );
   };
-  reader.readAsDataURL(file);
+  img.src = objectUrl;
 }
 
 export function handleFileChange(e: Event): void {
@@ -42,6 +63,7 @@ export function handleDragOver(e: DragEvent): void {
 }
 
 export function clearImage(): void {
-  dom.inputImg.setAttribute('src', '');
+  setOriginalImageUrl('');
+  dom.inputImg.src = '';
   resetAllFilters();
 }
