@@ -1,7 +1,7 @@
 import { dom } from './dom.ts';
 import { filterHistory, filterMatrixState, MAX_FILTERS, originalImageUrl } from './state.ts';
 import { PRESETS } from './presets.ts';
-import type { Matrix } from './types.ts';
+import type { Matrix, FilterHistoryEntry } from './types.ts';
 
 /** Sync the 3×3 number inputs with the given matrix values */
 export function setMatrixUI(matrix: Matrix): void {
@@ -63,22 +63,50 @@ export function updateFilterUI(): void {
   }
 }
 
-/** Render the history <li> items (uses event-delegation, no inline onclick) */
-export function updateHistoryList(): void {
-  let html = '';
-  filterHistory.forEach((filter, index) => {
-    const label = getPresetLabel(filter.preset);
-    html += `
-      <li class="history-item">
-        <span class="history-index">${index + 1}.</span>
-        <span class="history-name">${label}</span>
-        <button class="history-remove" data-index="${index}" title="Remove this filter">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-        </button>
-      </li>
-    `;
-  });
-  dom.historyList.innerHTML = html;
+/** Append a single new history item to the list without re-rendering anything else */
+export function appendHistoryItem(entry: FilterHistoryEntry, index: number): void {
+  // Demote the previous last button from "Undo" to "Revert"
+  const btns = dom.historyList.querySelectorAll<HTMLButtonElement>('.history-remove');
+  if (btns.length > 0) btns[btns.length - 1].title = 'Revert to before this filter';
+
+  const li = document.createElement('li');
+  li.className = 'history-item';
+  li.innerHTML = `
+    <span class="history-index">${index + 1}.</span>
+    <span class="history-name">${getPresetLabel(entry.preset)}</span>
+    <button class="history-remove" data-index="${index}" title="Undo this filter">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+    </button>
+  `;
+  dom.historyList.appendChild(li);
+  updateFilterUI();
+}
+
+/** Animate items from fromIndex onwards out of the list, then remove them from the DOM */
+export function removeHistoryItems(fromIndex: number, onDone: () => void): void {
+  const items = dom.historyList.querySelectorAll<HTMLElement>('.history-item');
+  const toRemove = Array.from(items).slice(fromIndex);
+
+  if (toRemove.length === 0) {
+    onDone();
+    return;
+  }
+
+  toRemove.forEach((el) => el.classList.add('removing'));
+
+  setTimeout(() => {
+    toRemove.forEach((el) => el.remove());
+    // Promote the new last item's button back to "Undo"
+    const remaining = dom.historyList.querySelectorAll<HTMLButtonElement>('.history-remove');
+    if (remaining.length > 0) remaining[remaining.length - 1].title = 'Undo this filter';
+    onDone();
+  }, 260);
+}
+
+/** Full list clear – only called on reset when the entire history is wiped */
+export function rebuildHistoryList(): void {
+  dom.historyList.innerHTML = '';
+  updateFilterUI();
 }
 
 function getPresetLabel(presetName: string): string {
@@ -98,6 +126,7 @@ export function updateControlsState(): void {
 
   dom.applyBtn.disabled = !hasImage || limitReached;
   dom.deleteBtn.disabled = !hasImage;
+  dom.downloadBtn.disabled = !hasImage;
   dom.resetBtn.disabled = !hasImage;
 
   if (!hasImage) {

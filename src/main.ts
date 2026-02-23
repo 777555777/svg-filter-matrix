@@ -42,6 +42,16 @@ function init(): void {
   dom.deleteBtn.addEventListener('click', clearImage);
   dom.resetBtn.addEventListener('click', resetAllFilters);
 
+  // Download
+  dom.downloadBtn.addEventListener('click', () => {
+    const src = dom.inputImg.src;
+    if (!src) return;
+    const a = document.createElement('a');
+    a.href = src;
+    a.download = 'filtered-image.jpg';
+    a.click();
+  });
+
   // History remove – event delegation (no window.removeFilter needed)
   dom.historyList.addEventListener('click', (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.history-remove');

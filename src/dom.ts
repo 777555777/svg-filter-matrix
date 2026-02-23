@@ -10,6 +10,8 @@ export const dom = {
   inputImg: ref<HTMLImageElement>('input-img'),
   deleteBtn: ref<HTMLButtonElement>('delete'),
   resetBtn: ref<HTMLButtonElement>('reset'),
+  downloadBtn: ref<HTMLButtonElement>('download'),
+  bakeOverlay: ref<HTMLElement>('bake-overlay'),
   preset: ref<HTMLSelectElement>('preset'),
   matrixInputs: document.querySelectorAll<HTMLInputElement>('[d-ref="matrix"] input[type="number"]'),
   applyBtn: ref<HTMLButtonElement>('apply'),

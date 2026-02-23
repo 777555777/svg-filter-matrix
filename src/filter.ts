@@ -2,7 +2,14 @@ import { dom } from './dom.ts';
 import { filterHistory, filterMatrixState, MAX_FILTERS, originalImageUrl } from './state.ts';
 import { PRESETS } from './presets.ts';
 import type { Matrix } from './types.ts';
-import { setMatrixUI, updateFilterUI, updateHistoryList, updateControlsState } from './ui.ts';
+import {
+  setMatrixUI,
+  updateFilterUI,
+  appendHistoryItem,
+  removeHistoryItems,
+  rebuildHistoryList,
+  updateControlsState,
+} from './ui.ts';
 
 // ---------------------------------------------------------------------------
 // SVG filter – always a single feConvolveMatrix (live preview only)
@@ -87,6 +94,11 @@ export async function applyCurrentFilter(): Promise<void> {
 
   dom.applyBtn.disabled = true;
 
+  // Flash the bake overlay to mask processing
+  dom.bakeOverlay.classList.remove('active');
+  void dom.bakeOverlay.offsetWidth;
+  dom.bakeOverlay.classList.add('active');
+
   // Snapshot the current img src before baking
   const snapshotUrl = dom.inputImg.src;
   const bakedUrl = await bakeFilteredImage();
@@ -106,7 +118,7 @@ export async function applyCurrentFilter(): Promise<void> {
   }
 
   updateFilterChain();
-  updateHistoryList();
+  appendHistoryItem(filterHistory[filterHistory.length - 1], filterHistory.length - 1);
 }
 
 export function undoLastFilter(): void {
@@ -116,8 +128,9 @@ export function undoLastFilter(): void {
   dom.inputImg.src = entry.snapshotUrl;
 
   updateFilterChain();
-  updateHistoryList();
   updateControlsState();
+  // fromIndex = new length (was the last index before pop)
+  removeHistoryItems(filterHistory.length, () => {});
 }
 
 export function resetAllFilters(): void {
@@ -128,7 +141,7 @@ export function resetAllFilters(): void {
   }
 
   applyPreset('identity');
-  updateHistoryList();
+  rebuildHistoryList();
   updateControlsState();
 }
 
@@ -140,6 +153,6 @@ export function removeFilter(index: number): void {
   filterHistory.splice(index);
 
   updateFilterChain();
-  updateHistoryList();
   updateControlsState();
+  removeHistoryItems(index, () => {});
 }

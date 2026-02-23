@@ -160,12 +160,17 @@ main {
   grid-template-columns: 1fr 340px;
   gap: 1.5rem;
   align-items: stretch;
+  /* Lock to viewport so both columns share the same height */
+  height: calc(100dvh - 15rem);
 }
 
 .sidebar {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* ========= Panels ========= */
@@ -181,13 +186,16 @@ main {
 }
 
 .panel-image {
-  flex: 1;
+  height: 100%;
+  overflow: hidden;
 }
 
 .panel-history {
   flex: 1;
-  min-height: 280px;
+  min-height: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .panel-header {
@@ -239,14 +247,14 @@ main {
   justify-content: center;
   gap: 0.75rem;
   padding: 4rem 2rem;
+  height: 100%;
   border: 2px dashed var(--border-default);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition:
     border-color 0.3s var(--ease),
     background-color 0.3s var(--ease);
-  min-height: 22rem;
-  height: 100%;
+  flex: 1;
   background: var(--bg-elevated);
 }
 
@@ -284,7 +292,6 @@ main {
   object-fit: contain;
   border-radius: var(--radius-md);
   background: var(--bg-elevated);
-  max-height: 80vh;
 }
 
 /* CSS show/hide: image loaded vs placeholder */
@@ -557,6 +564,8 @@ button.btn-ghost {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-default) transparent;
 }
 
 p.history-empty {
@@ -584,10 +593,22 @@ li.history-item {
   background: var(--bg-elevated);
   border-radius: var(--radius-sm);
   border-left: 3px solid var(--accent);
-  transition: background-color 0.2s var(--ease);
+  transition:
+    background-color 0.2s var(--ease),
+    opacity 0.3s var(--ease),
+    transform 0.3s var(--ease);
+  animation: history-slide-in 0.3s var(--ease) both;
 
   &:hover {
     background: var(--bg-input);
+  }
+
+  &.removing {
+    opacity: 0;
+    transform: translateY(8px);
+    transition:
+      opacity 0.25s var(--ease),
+      transform 0.25s var(--ease);
   }
 
   .history-index {
@@ -630,6 +651,76 @@ li.history-item {
   }
 }
 
+/* ========= Animations ========= */
+
+@keyframes history-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* Image bake overlay flash */
+.import .bake-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    135deg,
+    oklch(from var(--accent) l c h / 0.12),
+    oklch(from var(--secondary) l c h / 0.08)
+  );
+  backdrop-filter: blur(2px);
+}
+
+.import .bake-overlay.active {
+  animation: bake-flash 0.5s var(--ease) both;
+}
+
+@keyframes bake-flash {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Button press animation */
+button.btn-primary:active:not(:disabled),
+button.btn-secondary:active:not(:disabled) {
+  transform: scale(0.96);
+  transition-duration: 0.08s;
+}
+
+/* Download button */
+button.btn-ghost.btn-download {
+  &:hover:not(:disabled) {
+    color: var(--secondary);
+    background: var(--secondary-soft);
+  }
+}
+
+/* When hovering a remove button, flag all subsequent items as collateral */
+li.history-item:has(.history-remove:hover),
+li.history-item:has(.history-remove:hover) ~ li.history-item {
+  background: oklch(from var(--accent) l c h / 0.07);
+  border-left-color: oklch(from var(--accent) l c h / 0.4);
+
+  .history-index,
+  .history-name {
+    color: oklch(from var(--accent) l c h / 0.55);
+    text-decoration: line-through;
+    text-decoration-color: oklch(from var(--accent) l c h / 0.35);
+  }
+}
+
 /* CSS show/hide: history empty state */
 .history-list:has(ol.history-items .history-item) .history-empty {
   display: none;
@@ -654,15 +745,29 @@ li.history-item {
 
   .app-layout {
     grid-template-columns: 1fr;
+    /* Let height be natural when stacked */
+    height: auto;
   }
 
   .sidebar {
     flex-direction: row;
     flex-wrap: wrap;
+    height: auto;
+    overflow: visible;
+  }
+
+  .panel-image {
+    height: auto;
+  }
+
+  .panel-history {
+    min-height: 280px;
+    max-height: 436px;
   }
 
   .panel-operator,
   .panel-history {
+    max-height: 436px;
     flex: 1 1 280px;
   }
 }
