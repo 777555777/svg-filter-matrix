@@ -1,7 +1,7 @@
 import { dom } from './dom.ts';
 import { filterHistory, filterMatrixState, MAX_FILTERS, originalImageUrl } from './state.ts';
 import { PRESETS } from './presets.ts';
-import type { Matrix, FilterHistoryEntry } from './types.ts';
+import type { Matrix, FilterHistoryEntry, AdjustmentState } from './types.ts';
 
 /** Sync the 3×3 number inputs with the given matrix values */
 export function setMatrixUI(matrix: Matrix): void {
@@ -40,10 +40,7 @@ export function updateFilterUI(): void {
   dom.filterCount.textContent = String(filterHistory.length);
 
   // Update meter bar
-  const meter = document.querySelector<HTMLElement>('.filter-meter-fill');
-  if (meter) {
-    meter.style.width = `${(filterHistory.length / MAX_FILTERS) * 100}%`;
-  }
+  dom.filterMeterFill.style.width = `${(filterHistory.length / MAX_FILTERS) * 100}%`;
 
   const limitReached = filterHistory.length >= MAX_FILTERS;
 
@@ -73,7 +70,7 @@ export function appendHistoryItem(entry: FilterHistoryEntry, index: number): voi
   li.className = 'history-item';
   li.innerHTML = `
     <span class="history-index">${index + 1}.</span>
-    <span class="history-name">${getPresetLabel(entry.preset)}</span>
+    <span class="history-name">${entry.label}</span>
     <button class="history-remove" data-index="${index}" title="Undo this filter">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
     </button>
@@ -109,9 +106,18 @@ export function rebuildHistoryList(): void {
   updateFilterUI();
 }
 
-function getPresetLabel(presetName: string): string {
-  const option = dom.preset.querySelector<HTMLOptionElement>(`option[value="${presetName}"]`);
-  return option?.textContent ?? presetName;
+/** Sync adjustment slider UI with state */
+export function setAdjustmentUI(st: AdjustmentState): void {
+  dom.adjGray.value = String(st.grayscale);
+  dom.adjR.value = String(st.r);
+  dom.adjG.value = String(st.g);
+  dom.adjB.value = String(st.b);
+  dom.adjContrast.value = String(st.contrast);
+  dom.adjGrayVal.textContent = `${st.grayscale}%`;
+  dom.adjRVal.textContent = `${st.r}%`;
+  dom.adjGVal.textContent = `${st.g}%`;
+  dom.adjBVal.textContent = `${st.b}%`;
+  dom.adjContrastVal.textContent = `${st.contrast}%`;
 }
 
 /** Enable / disable controls depending on image-loaded + filter-limit state */
@@ -123,6 +129,14 @@ export function updateControlsState(): void {
   dom.matrixInputs.forEach((input) => {
     input.disabled = !hasImage || limitReached;
   });
+
+  // Adjustment sliders
+  const adjDisabled = !hasImage || limitReached;
+  dom.adjGray.disabled = adjDisabled;
+  dom.adjR.disabled = adjDisabled;
+  dom.adjG.disabled = adjDisabled;
+  dom.adjB.disabled = adjDisabled;
+  dom.adjContrast.disabled = adjDisabled;
 
   dom.applyBtn.disabled = !hasImage || limitReached;
   dom.deleteBtn.disabled = !hasImage;

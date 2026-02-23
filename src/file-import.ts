@@ -1,6 +1,7 @@
 import { dom } from './dom.ts';
 import { resetAllFilters } from './filter.ts';
 import { setOriginalImageUrl, MAX_IMAGE_DIM } from './state.ts';
+import { trackObjectUrl, revokeTrackedObjectUrl } from './object-url.ts';
 
 function loadImageFile(file: File): void {
   if (!file.type.startsWith('image/')) {
@@ -8,7 +9,7 @@ function loadImageFile(file: File): void {
     return;
   }
 
-  const objectUrl = URL.createObjectURL(file);
+  const objectUrl = trackObjectUrl(URL.createObjectURL(file));
   const img = new Image();
   img.onload = () => {
     const { naturalWidth: w, naturalHeight: h } = img;
@@ -20,7 +21,7 @@ function loadImageFile(file: File): void {
     }
 
     // Down-scale to fit within 4K
-    URL.revokeObjectURL(objectUrl);
+    revokeTrackedObjectUrl(objectUrl);
     const scale = MAX_IMAGE_DIM / Math.max(w, h);
     const canvas = document.createElement('canvas');
     canvas.width = Math.round(w * scale);
@@ -30,7 +31,7 @@ function loadImageFile(file: File): void {
     canvas.toBlob(
       (blob) => {
         if (!blob) return;
-        setOriginalImageUrl(URL.createObjectURL(blob));
+        setOriginalImageUrl(trackObjectUrl(URL.createObjectURL(blob)));
         resetAllFilters();
       },
       'image/jpeg',

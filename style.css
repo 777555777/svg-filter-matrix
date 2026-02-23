@@ -101,6 +101,20 @@ h6 {
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ========= Utilities ========= */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ========= Global ========= */
 
 body {
@@ -313,6 +327,156 @@ img[src=''] {
   gap: 0.25rem;
 }
 
+/* ========= Mode Switcher ========= */
+
+.mode-switcher {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.mode-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem 0.5rem;
+  border-radius: calc(var(--radius-sm) - 2px);
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.2s var(--ease);
+
+  svg {
+    pointer-events: none;
+  }
+
+  &:hover {
+    color: var(--text-secondary);
+  }
+}
+
+input:checked + .mode-btn {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* Both sections stacked in the same grid cell – no layout shift on switch */
+.operator-body {
+  display: grid;
+}
+
+.section-convolution,
+.section-adjustments {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+/* CSS show/hide operator sections based on active mode */
+.panel-operator:has(#mode-conv:checked) .section-adjustments,
+.panel-operator:has(#mode-adj:checked) .section-convolution {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ========= Adjustment Sliders ========= */
+
+.section-adjustments {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0.25rem 0;
+}
+
+.adj-slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+
+  label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+}
+
+.adj-value {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 3.2em;
+  text-align: right;
+}
+
+/* Range slider styling */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 100vmax;
+  background: var(--bg-elevated);
+  outline: none;
+  cursor: pointer;
+  transition: opacity 0.2s var(--ease);
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--bg-surface);
+    box-shadow: 0 0 0 1px var(--border-default);
+    cursor: pointer;
+    transition: all 0.15s var(--ease);
+  }
+
+  &:not(:disabled)::-webkit-slider-thumb:hover {
+    box-shadow: 0 0 0 3px var(--accent-soft);
+    transform: scale(1.15);
+  }
+
+  &::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--bg-surface);
+    cursor: pointer;
+  }
+}
+
+/* Per-channel accent tinting */
+.adj-slider--r input[type='range']::-webkit-slider-thumb {
+  background: #f06;
+}
+.adj-slider--g input[type='range']::-webkit-slider-thumb {
+  background: #0c6;
+}
+.adj-slider--b input[type='range']::-webkit-slider-thumb {
+  background: #39f;
+}
+.adj-slider--r input[type='range']::-moz-range-thumb {
+  background: #f06;
+}
+.adj-slider--g input[type='range']::-moz-range-thumb {
+  background: #0c6;
+}
+.adj-slider--b input[type='range']::-moz-range-thumb {
+  background: #39f;
+}
+
 /* ========= Preset ========= */
 
 .preset {
@@ -398,6 +562,7 @@ img[src=''] {
     caret-color: var(--accent);
 
     /* Hide spinners */
+    appearance: textfield;
     -moz-appearance: textfield;
     &::-webkit-outer-spin-button,
     &::-webkit-inner-spin-button {

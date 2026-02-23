@@ -1,8 +1,26 @@
 import { dom } from './dom.ts';
-import { filterMatrixState } from './state.ts';
-import { setMatrix, applyPreset, applyCurrentFilter, undoLastFilter, resetAllFilters, removeFilter } from './filter.ts';
+import { filterMatrixState, adjustmentState } from './state.ts';
+import {
+  setMatrix,
+  applyPreset,
+  applyCurrentFilter,
+  undoLastFilter,
+  resetAllFilters,
+  removeFilter,
+  updateFilterChain,
+} from './filter.ts';
 import { updatePresetSelection } from './ui.ts';
 import { handleFileChange, handleDropzoneClick, handleFileDrop, handleDragOver, clearImage } from './file-import.ts';
+
+function syncModeSectionInteractivity(): void {
+  const convolutionActive = dom.modeConv.checked;
+
+  dom.sectionConvolution.toggleAttribute('inert', !convolutionActive);
+  dom.sectionConvolution.setAttribute('aria-hidden', String(!convolutionActive));
+
+  dom.sectionAdjustments.toggleAttribute('inert', convolutionActive);
+  dom.sectionAdjustments.setAttribute('aria-hidden', String(convolutionActive));
+}
 
 function init(): void {
   // Matrix input events (rAF-debounced to avoid redundant filter rebuilds)
@@ -24,6 +42,34 @@ function init(): void {
       }
     });
   });
+
+  // Adjustment slider events (rAF-debounced)
+  const adjSliders = [dom.adjGray, dom.adjR, dom.adjG, dom.adjB, dom.adjContrast] as const;
+  const adjKeys = ['grayscale', 'r', 'g', 'b', 'contrast'] as const;
+  const adjValueEls = [dom.adjGrayVal, dom.adjRVal, dom.adjGVal, dom.adjBVal, dom.adjContrastVal];
+
+  adjSliders.forEach((slider, i) => {
+    slider.addEventListener('input', () => {
+      const val = parseInt(slider.value, 10);
+      adjustmentState[adjKeys[i]] = val;
+      adjValueEls[i].textContent = `${val}%`;
+      if (!rafPending) {
+        rafPending = true;
+        requestAnimationFrame(() => {
+          rafPending = false;
+          updateFilterChain();
+        });
+      }
+    });
+  });
+
+  // Mode switch – update SVG filter and section interactivity when mode changes
+  const onModeChange = () => {
+    syncModeSectionInteractivity();
+    updateFilterChain();
+  };
+  dom.modeConv.addEventListener('change', onModeChange);
+  dom.modeAdj.addEventListener('change', onModeChange);
 
   // File import
   dom.fileInput.addEventListener('change', handleFileChange);
@@ -59,6 +105,8 @@ function init(): void {
     const index = Number(btn.dataset.index);
     removeFilter(index);
   });
+
+  syncModeSectionInteractivity();
 
   // Set initial matrix state
   setMatrix(filterMatrixState);

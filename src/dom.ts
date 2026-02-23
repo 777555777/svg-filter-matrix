@@ -18,5 +18,22 @@ export const dom = {
   undoBtn: ref<HTMLButtonElement>('undo'),
   filterCount: ref<HTMLElement>('filter-count'),
   historyList: ref<HTMLOListElement>('history-list'),
+  filterMeterFill: ref<HTMLElement>('filter-meter-fill'),
   svgFilter: document.querySelector<SVGFilterElement>('#convolve')!,
+  // Mode switcher
+  modeConv: ref<HTMLInputElement>('mode-conv'),
+  modeAdj: ref<HTMLInputElement>('mode-adj'),
+  sectionConvolution: ref<HTMLElement>('section-convolution'),
+  sectionAdjustments: ref<HTMLElement>('section-adjustments'),
+  // Adjustment sliders
+  adjGray: ref<HTMLInputElement>('adj-gray'),
+  adjR: ref<HTMLInputElement>('adj-r'),
+  adjG: ref<HTMLInputElement>('adj-g'),
+  adjB: ref<HTMLInputElement>('adj-b'),
+  adjGrayVal: ref<HTMLElement>('adj-gray-val'),
+  adjRVal: ref<HTMLElement>('adj-r-val'),
+  adjGVal: ref<HTMLElement>('adj-g-val'),
+  adjBVal: ref<HTMLElement>('adj-b-val'),
+  adjContrast: ref<HTMLInputElement>('adj-contrast'),
+  adjContrastVal: ref<HTMLElement>('adj-contrast-val'),
 };
