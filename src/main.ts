@@ -1,11 +1,30 @@
 import { dom } from './dom.ts';
-import { filterMatrixState } from './state.ts';
-import { setMatrix, applyPreset, applyCurrentFilter, undoLastFilter, resetAllFilters, removeFilter } from './filter.ts';
+import { filterMatrixState, adjustmentState } from './state.ts';
+import {
+  setMatrix,
+  applyPreset,
+  applyCurrentFilter,
+  undoLastFilter,
+  resetAllFilters,
+  removeFilter,
+  updateFilterChain,
+} from './filter.ts';
 import { updatePresetSelection } from './ui.ts';
 import { handleFileChange, handleDropzoneClick, handleFileDrop, handleDragOver, clearImage } from './file-import.ts';
 
+function syncModeSectionInteractivity(): void {
+  const convolutionActive = dom.modeConv.checked;
+
+  dom.sectionConvolution.toggleAttribute('inert', !convolutionActive);
+  dom.sectionConvolution.setAttribute('aria-hidden', String(!convolutionActive));
+
+  dom.sectionAdjustments.toggleAttribute('inert', convolutionActive);
+  dom.sectionAdjustments.setAttribute('aria-hidden', String(convolutionActive));
+}
+
 function init(): void {
-  // Matrix input events
+  // Matrix input events (rAF-debounced to avoid redundant filter rebuilds)
+  let rafPending = false;
   dom.matrixInputs.forEach((input) => {
     input.addEventListener('input', (e) => {
       const target = e.target as HTMLInputElement;
@@ -13,10 +32,44 @@ function init(): void {
       const row = Math.floor(index / 3);
       const col = index % 3;
       filterMatrixState[row][col] = parseFloat(target.value) || 0;
-      setMatrix(filterMatrixState);
       updatePresetSelection();
+      if (!rafPending) {
+        rafPending = true;
+        requestAnimationFrame(() => {
+          rafPending = false;
+          setMatrix(filterMatrixState);
+        });
+      }
     });
   });
+
+  // Adjustment slider events (rAF-debounced)
+  const adjSliders = [dom.adjGray, dom.adjR, dom.adjG, dom.adjB, dom.adjContrast] as const;
+  const adjKeys = ['grayscale', 'r', 'g', 'b', 'contrast'] as const;
+  const adjValueEls = [dom.adjGrayVal, dom.adjRVal, dom.adjGVal, dom.adjBVal, dom.adjContrastVal];
+
+  adjSliders.forEach((slider, i) => {
+    slider.addEventListener('input', () => {
+      const val = parseInt(slider.value, 10);
+      adjustmentState[adjKeys[i]] = val;
+      adjValueEls[i].textContent = `${val}%`;
+      if (!rafPending) {
+        rafPending = true;
+        requestAnimationFrame(() => {
+          rafPending = false;
+          updateFilterChain();
+        });
+      }
+    });
+  });
+
+  // Mode switch – update SVG filter and section interactivity when mode changes
+  const onModeChange = () => {
+    syncModeSectionInteractivity();
+    updateFilterChain();
+  };
+  dom.modeConv.addEventListener('change', onModeChange);
+  dom.modeAdj.addEventListener('change', onModeChange);
 
   // File import
   dom.fileInput.addEventListener('change', handleFileChange);
@@ -35,6 +88,16 @@ function init(): void {
   dom.deleteBtn.addEventListener('click', clearImage);
   dom.resetBtn.addEventListener('click', resetAllFilters);
 
+  // Download
+  dom.downloadBtn.addEventListener('click', () => {
+    const src = dom.inputImg.src;
+    if (!src) return;
+    const a = document.createElement('a');
+    a.href = src;
+    a.download = 'filtered-image.jpg';
+    a.click();
+  });
+
   // History remove – event delegation (no window.removeFilter needed)
   dom.historyList.addEventListener('click', (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.history-remove');
@@ -42,6 +105,8 @@ function init(): void {
     const index = Number(btn.dataset.index);
     removeFilter(index);
   });
+
+  syncModeSectionInteractivity();
 
   // Set initial matrix state
   setMatrix(filterMatrixState);

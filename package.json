@@ -6,13 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview --host"
+    "preview": "npm run build && vite preview --host"
   },
   "devDependencies": {
     "typescript": "~5.9.3",
-    "vite": "^8.0.0-beta.13"
+    "vite": "^8.0.0-beta.15"
   },
   "overrides": {
-    "vite": "^8.0.0-beta.13"
+    "vite": "^8.0.0-beta.15"
   }
 }
