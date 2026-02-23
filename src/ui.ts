@@ -38,6 +38,13 @@ function matricesMatch(a: Matrix, b: Matrix): boolean {
 /** Update filter-count badge + button disabled states */
 export function updateFilterUI(): void {
   dom.filterCount.textContent = String(filterHistory.length);
+
+  // Update meter bar
+  const meter = document.querySelector<HTMLElement>('.filter-meter-fill');
+  if (meter) {
+    meter.style.width = `${(filterHistory.length / MAX_FILTERS) * 100}%`;
+  }
+
   const limitReached = filterHistory.length >= MAX_FILTERS;
 
   dom.undoBtn.disabled = filterHistory.length === 0;
